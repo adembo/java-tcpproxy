@@ -12,10 +12,12 @@ public class StreamCopyThread extends Thread {
     private final int bufSize = 1024;
     private final boolean debug = false;
     private final String header = "Debug output: ";
+    private Object lock;
 
-    public StreamCopyThread(Socket inSock, Socket outSock) {
+    public StreamCopyThread(Socket inSock, Socket outSock, Object lock) {
         this.inSock = inSock;
         this.outSock = outSock;
+        this.lock = lock;
     }
 
     @Override
@@ -50,25 +52,25 @@ public class StreamCopyThread extends Thread {
             System.err.println(header + ":" + xc);
             xc.printStackTrace();
         }
-        // synchronized (lock) {
-        // done = true;
-        // try {
-        // if ((peer == null) || peer.isDone()) {
-        // // Cleanup if there is only one peer OR
-        // // if _both_ peers are done
-        // inSock.close();
-        // outSock.close();
-        // } else {
-        // // Signal the peer (if any) that we're done on this side of the connection
-        // peer.interrupt();
-        // }
-        // } catch (Exception xc) {
-        // System.err.println(header + ":" + xc);
-        // xc.printStackTrace();
-        // } finally {
-        // connections.removeElement(this);
-        // }
-        // }
+        synchronized (lock) {
+            done = true;
+            try {
+                if ((peer == null) || peer.isDone()) {
+                    // Cleanup if there is only one peer OR
+                    // if _both_ peers are done
+                    inSock.close();
+                    outSock.close();
+                } else {
+                    // Signal the peer (if any) that we're done on this side of the connection
+                    peer.interrupt();
+                }
+            } catch (Exception xc) {
+                System.err.println(header + ":" + xc);
+                xc.printStackTrace();
+            } finally {
+                // connections.removeElement(this);
+            }
+        }
     }
 
     public boolean isDone() {
