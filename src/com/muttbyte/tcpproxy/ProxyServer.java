@@ -9,7 +9,7 @@ public class ProxyServer {
   public static final int NUM_THREADS = 3;
   public static final int DEFAULT_BACKLOG = 1000;
 
-  public static void main(String[] argv) {
+  public static void main(String[] argv) throws IOException {
     if (argv.length != 3) {
       System.out.println("Usage: tcpproxy [in-port] [out addr] [out port]");
       System.exit(2);
@@ -19,12 +19,7 @@ public class ProxyServer {
     int outPort = Integer.parseInt(argv[2]);
 
     System.out.println("Proxy port " + inPort + " to addr " + outAddr + " port " + outPort);
-    ServerSocket servSock = null;
-    try {
-      servSock = new ServerSocket(inPort, DEFAULT_BACKLOG);
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
+    ServerSocket servSock = new ServerSocket(inPort, DEFAULT_BACKLOG);
 
     for (int i = 0; i < NUM_THREADS; i++) {
       SingleProxy singleProxy = new SingleProxy(servSock, outAddr, outPort);
