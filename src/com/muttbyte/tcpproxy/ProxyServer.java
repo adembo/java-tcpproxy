@@ -19,10 +19,10 @@ public class ProxyServer {
     int outPort = Integer.parseInt(argv[2]);
 
     System.out.println("Proxy port " + inPort + " to addr " + outAddr + " port " + outPort);
-    ServerSocket servSock = new ServerSocket(inPort, DEFAULT_BACKLOG);
+    ServerSocket proxy = new ServerSocket(inPort, DEFAULT_BACKLOG);
 
     for (int i = 0; i < NUM_THREADS; i++) {
-      SingleProxy singleProxy = new SingleProxy(servSock, outAddr, outPort);
+      SingleProxy singleProxy = new SingleProxy(proxy, outAddr, outPort);
       singleProxy.run();
     }
 
@@ -31,39 +31,31 @@ public class ProxyServer {
 
   public static class SingleProxy extends Thread {
 
-    ServerSocket servSock;
+    ServerSocket proxy;
     String outAddr;
     int outPort;
 
-    public SingleProxy(ServerSocket servSock, String outAddr, int outPort) {
-      this.servSock = servSock;
+    public SingleProxy(ServerSocket proxy, String outAddr, int outPort) {
+      this.proxy = proxy;
       this.outAddr = outAddr;
       this.outPort = outPort;
     }
 
     @Override
     public void run() {
-
       while (true) {
-
         try {
-
-          Socket serverSocket = servSock.accept();
+          Socket toLocal = proxy.accept();
           InetAddress outInetAddr = InetAddress.getByName(outAddr);
-          Socket cliSock = new Socket(outInetAddr, outPort);
+          Socket toRemote = new Socket(outInetAddr, outPort);
 
           Object lock = new Object();
-          StreamCopyThread sToC = new StreamCopyThread(serverSocket, cliSock, lock);
-          StreamCopyThread cToS = new StreamCopyThread(cliSock, serverSocket, lock);
-          sToC.setPeer(cToS);
-          cToS.setPeer(sToC);
-          // synchronized (lock) {
-            // connections.addElement(cToS);
-            // connections.addElement(sToC);
-            sToC.start();
-            cToS.start();
-            // }
-
+          StreamCopyThread lToR = new StreamCopyThread(toLocal, toRemote, lock);
+          StreamCopyThread rToL = new StreamCopyThread(toRemote, toLocal, lock);
+          lToR.setPeer(rToL);
+          rToL.setPeer(lToR);
+          lToR.start();
+          rToL.start();
         } catch (Exception exc) {
           System.out.println(exc.toString());
           exc.printStackTrace();
