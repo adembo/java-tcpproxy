@@ -10,7 +10,10 @@ public class ProxyServer {
   public static final int DEFAULT_BACKLOG = 1000;
 
   public static void main(String[] argv) {
-
+    if (argv.length != 3) {
+      System.out.println("Usage: tcpproxy [in-port] [out addr] [out port]");
+      System.exit(2);
+    }
     int inPort = Integer.parseInt(argv[0]);
     String outAddr = argv[1];
     int outPort = Integer.parseInt(argv[2]);
